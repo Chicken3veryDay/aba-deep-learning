@@ -1,5 +1,5 @@
 -- ABA Deep Learning Step 2 collector
--- Observation-only. This script never dispatches remotes or simulates input.
+-- Observation-only: this script never dispatches remotes or simulates input.
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -8,7 +8,7 @@ local HttpService = game:GetService("HttpService")
 local Stats = game:GetService("Stats")
 
 local LocalPlayer = Players.LocalPlayer
-local VERSION = "0.2.0"
+local VERSION = "0.2.1"
 local SCHEMA_VERSION = "1.0.0"
 local STREAM_FORMAT = "aba_episode_jsonl_v1"
 local FEATURE_COUNT = 64
@@ -39,11 +39,11 @@ local function disconnectAll(connections)
     table.clear(connections)
 end
 
-local function getHumanoid(model)
+local function humanoid(model)
     return model and model:FindFirstChildOfClass("Humanoid") or nil
 end
 
-local function getRoot(model)
+local function rootPart(model)
     if not model then
         return nil
     end
@@ -52,30 +52,29 @@ local function getRoot(model)
         or model.PrimaryPart
 end
 
-local function readValue(model, name, default)
+local function valueOf(model, name, fallback)
     local value = model and model:FindFirstChild(name)
     if value and value:IsA("ValueBase") then
-        return value.Value, true
+        return value.Value
     end
-    return default, false
+    return fallback
 end
 
-local function marker(model, names)
+local function hasMarker(model, names)
     if not model then
-        return false, nil
+        return false
     end
     for _, name in ipairs(names) do
-        local instance = model:FindFirstChild(name, true)
-        if instance then
-            return true, instance:GetFullName()
+        if model:FindFirstChild(name, true) then
+            return true
         end
     end
-    return false, nil
+    return false
 end
 
-local function animationState(model)
-    local humanoid = getHumanoid(model)
-    local animator = humanoid and humanoid:FindFirstChildOfClass("Animator")
+local function primaryAnimation(model)
+    local hum = humanoid(model)
+    local animator = hum and hum:FindFirstChildOfClass("Animator")
     if not animator then
         return nil
     end
@@ -142,7 +141,7 @@ end
 
 local function nearestTarget(character)
     local live = workspace:FindFirstChild("Live")
-    local selfRoot = getRoot(character)
+    local selfRoot = rootPart(character)
     if not live or not selfRoot then
         return nil
     end
@@ -151,10 +150,10 @@ local function nearestTarget(character)
     local selectedDistance = math.huge
     for _, candidate in ipairs(live:GetChildren()) do
         if candidate ~= character and candidate:IsA("Model") then
-            local humanoid = getHumanoid(candidate)
-            local root = getRoot(candidate)
-            if humanoid and humanoid.Health > 0 and root then
-                local distance = (root.Position - selfRoot.Position).Magnitude
+            local candidateHumanoid = humanoid(candidate)
+            local candidateRoot = rootPart(candidate)
+            if candidateHumanoid and candidateHumanoid.Health > 0 and candidateRoot then
+                local distance = (candidateRoot.Position - selfRoot.Position).Magnitude
                 if distance < selectedDistance then
                     selected = candidate
                     selectedDistance = distance
@@ -165,9 +164,9 @@ local function nearestTarget(character)
     return selected
 end
 
-local function resolveTarget(character, explicit)
-    if explicit and explicit.Parent then
-        return explicit
+local function resolveTarget(character, explicitTarget)
+    if explicitTarget and explicitTarget.Parent then
+        return explicitTarget
     end
     local legacy = getgenv().ABA_AUTOPLAY_V3
     if legacy and legacy.Target and legacy.Target.Parent then
@@ -176,49 +175,33 @@ local function resolveTarget(character, explicit)
     return nearestTarget(character)
 end
 
-local function angleError(lookVector, direction)
-    local a = Vector3.new(lookVector.X, 0, lookVector.Z)
-    local b = Vector3.new(direction.X, 0, direction.Z)
-    if a.Magnitude < 0.001 or b.Magnitude < 0.001 then
-        return 0
-    end
-    return math.deg(math.acos(clamp(a.Unit:Dot(b.Unit), -1, 1)))
-end
-
-local function lineOfSight(character, target, root, targetRoot)
-    if not root or not targetRoot then
+local function lineOfSight(character, target, selfRoot, targetRoot)
+    if not selfRoot or not targetRoot then
         return false
     end
     local params = RaycastParams.new()
     params.FilterType = Enum.RaycastFilterType.Exclude
     params.FilterDescendantsInstances = character and { character } or {}
     params.IgnoreWater = true
-    local result = workspace:Raycast(root.Position, targetRoot.Position - root.Position, params)
+    local result = workspace:Raycast(selfRoot.Position, targetRoot.Position - selfRoot.Position, params)
     return result == nil or (target and result.Instance:IsDescendantOf(target))
 end
 
 local function entityState(model, other)
-    local humanoid = getHumanoid(model)
-    local root = getRoot(model)
-    local otherRoot = getRoot(other)
-    local blocking, blockingKnown = readValue(model, "Blocking", false)
-    local busy, busyKnown = readValue(model, "Busy", false)
-    local combo, comboKnown = readValue(model, "Combo", 0)
-    local stunned, stunMarker = marker(model, { "Stun", "Stunned", "Hitstun", "HitStun" })
-    local ragdolled, ragdollMarker = marker(model, { "Ragdoll", "Ragdolled", "RagdollValue" })
-    local recovering, recoveryMarker = marker(model, { "GettingUp", "GetUp", "Recovering", "Recovery" })
-    local invulnerable, immunityMarker = marker(model, { "IFrame", "IFrames", "Invulnerable", "Immunity", "M1Immunity" })
-
-    local health = humanoid and humanoid.Health or 0
-    local maxHealth = humanoid and humanoid.MaxHealth or 100
+    local hum = humanoid(model)
+    local root = rootPart(model)
+    local otherRoot = rootPart(other)
+    local health = hum and hum.Health or 0
+    local maxHealth = hum and hum.MaxHealth or 100
     local velocity = root and root.AssemblyLinearVelocity or Vector3.zero
     local facing = 0
+
     if root and otherRoot then
         local direction = otherRoot.Position - root.Position
-        local flat = Vector3.new(direction.X, 0, direction.Z)
-        local look = Vector3.new(root.CFrame.LookVector.X, 0, root.CFrame.LookVector.Z)
-        if flat.Magnitude > 0.001 and look.Magnitude > 0.001 then
-            facing = clamp(look.Unit:Dot(flat.Unit), -1, 1)
+        local flatDirection = Vector3.new(direction.X, 0, direction.Z)
+        local flatLook = Vector3.new(root.CFrame.LookVector.X, 0, root.CFrame.LookVector.Z)
+        if flatDirection.Magnitude > 0.001 and flatLook.Magnitude > 0.001 then
+            facing = clamp(flatLook.Unit:Dot(flatDirection.Unit), -1, 1)
         end
     end
 
@@ -231,29 +214,20 @@ local function entityState(model, other)
         speed_z = velocity.Z,
         vertical_speed = velocity.Y,
         facing_target_cos = facing,
-        grounded = humanoid and humanoid.FloorMaterial ~= Enum.Material.Air or false,
-        airborne = humanoid and humanoid.FloorMaterial == Enum.Material.Air or true,
-        stunned = stunned,
-        ragdolled = ragdolled,
-        blocking = blocking == true,
-        recovering = recovering,
-        invulnerable = invulnerable,
-        action_active = busy == true,
+        grounded = hum and hum.FloorMaterial ~= Enum.Material.Air or false,
+        airborne = hum and hum.FloorMaterial == Enum.Material.Air or true,
+        stunned = hasMarker(model, { "Stun", "Stunned", "Hitstun", "HitStun" }),
+        ragdolled = hasMarker(model, { "Ragdoll", "Ragdolled", "RagdollValue" }),
+        blocking = valueOf(model, "Blocking", false) == true,
+        recovering = hasMarker(model, { "GettingUp", "GetUp", "Recovering", "Recovery" }),
+        invulnerable = hasMarker(model, { "IFrame", "IFrames", "Invulnerable", "Immunity", "M1Immunity" }),
+        action_active = valueOf(model, "Busy", false) == true,
         action_progress = 0,
-        m1_stage = tonumber(combo) or 0,
+        m1_stage = tonumber(valueOf(model, "Combo", 0)) or 0,
         m1_reset_remaining_ms = 0,
         action_lock_remaining_ms = 0,
-        state_confidence = (blockingKnown or busyKnown or comboKnown) and 0.85 or 0.55,
-        current_animation = animationState(model),
-        raw_signals = {
-            blocking_known = blockingKnown,
-            busy_known = busyKnown,
-            combo_known = comboKnown,
-            stun_marker = stunMarker,
-            ragdoll_marker = ragdollMarker,
-            recovery_marker = recoveryMarker,
-            immunity_marker = immunityMarker,
-        },
+        state_confidence = 0.85,
+        current_animation = primaryAnimation(model),
     }
 end
 
@@ -316,7 +290,6 @@ function Collector.new()
         Config = nil,
         TargetOverride = nil,
         Connections = {},
-        EntityConnections = {},
         EventQueue = {},
         PendingActionRequest = nil,
         PendingExecutorResult = nil,
@@ -327,13 +300,12 @@ function Collector.new()
         LastSampleMs = nil,
         LastActionMs = nil,
         LastActionSuccess = 0,
-        LastEntities = nil,
     }, Collector)
 end
 
-function Collector:_connect(signal, callback, bucket)
+function Collector:_connect(signal, callback)
     local connection = signal:Connect(callback)
-    table.insert(bucket or self.Connections, connection)
+    table.insert(self.Connections, connection)
     return connection
 end
 
@@ -348,94 +320,47 @@ function Collector:_event(kind, payload)
     end
 end
 
-function Collector:_attach(character, target)
-    disconnectAll(self.EntityConnections)
-
-    local function attach(model, role)
-        if not model then
-            return
-        end
-        local humanoid = getHumanoid(model)
-        if humanoid then
-            self:_connect(humanoid.HealthChanged, function(health)
-                self:_event("health_changed", { role = role, health = health, max_health = humanoid.MaxHealth })
-            end, self.EntityConnections)
-            local animator = humanoid:FindFirstChildOfClass("Animator")
-            if animator then
-                self:_connect(animator.AnimationPlayed, function(track)
-                    self:_event("animation_played", {
-                        role = role,
-                        animation_id = track.Animation and track.Animation.AnimationId or "",
-                        priority = tostring(track.Priority),
-                    })
-                end, self.EntityConnections)
-            end
-        end
-
-        self:_connect(model.ChildAdded, function(child)
-            self:_event("marker_added", { role = role, name = child.Name, class_name = child.ClassName })
-        end, self.EntityConnections)
-        self:_connect(model.ChildRemoved, function(child)
-            self:_event("marker_removed", { role = role, name = child.Name, class_name = child.ClassName })
-        end, self.EntityConnections)
-
-        for _, name in ipairs({ "Blocking", "Busy", "Combo", "LastHit", "FHeld", "Space" }) do
-            local value = model:FindFirstChild(name)
-            if value and value:IsA("ValueBase") then
-                self:_connect(value.Changed, function(newValue)
-                    self:_event("value_changed", { role = role, name = name, value = newValue })
-                end, self.EntityConnections)
-            end
-        end
-    end
-
-    attach(character, "self")
-    attach(target, "target")
-end
-
-function Collector:_observation(character, target, timestampMs, dtMs)
-    local root = getRoot(character)
-    local targetRoot = getRoot(target)
+function Collector:_observation(character, target, timestamp, dtMs)
+    local selfRoot = rootPart(character)
+    local targetRoot = rootPart(target)
     local selfState = entityState(character, target)
     local targetState = entityState(target, character)
-    local worldOffset = root and targetRoot and (targetRoot.Position - root.Position) or Vector3.zero
-    local localOffset = root and root.CFrame:VectorToObjectSpace(worldOffset) or Vector3.zero
+    local worldOffset = selfRoot and targetRoot and (targetRoot.Position - selfRoot.Position) or Vector3.zero
+    local localOffset = selfRoot and selfRoot.CFrame:VectorToObjectSpace(worldOffset) or Vector3.zero
     local horizontalDistance = Vector3.new(worldOffset.X, 0, worldOffset.Z).Magnitude
     local distance = worldOffset.Magnitude
-    local selfVelocity = root and root.AssemblyLinearVelocity or Vector3.zero
+    local selfVelocity = selfRoot and selfRoot.AssemblyLinearVelocity or Vector3.zero
     local targetVelocity = targetRoot and targetRoot.AssemblyLinearVelocity or Vector3.zero
     local relativeVelocity = targetVelocity - selfVelocity
     local forward = horizontalDistance > 0.001 and Vector3.new(worldOffset.X, 0, worldOffset.Z).Unit or Vector3.zero
     local lateral = Vector3.new(-forward.Z, 0, forward.X)
-
     local moves = { moveHud(1), moveHud(2), moveHud(3), moveHud(4) }
-    local ping = pingMs()
-    local jitter = self.LastPing and math.abs(ping - self.LastPing) or 0
-    self.LastPing = ping
-
-    local selfCombo = tonumber(readValue(character, "Combo", 0)) or 0
-    local targetCombo = tonumber(readValue(target, "Combo", 0)) or 0
+    local currentPing = pingMs()
+    local jitter = self.LastPing and math.abs(currentPing - self.LastPing) or 0
+    self.LastPing = currentPing
 
     local observation = {
         schema_version = SCHEMA_VERSION,
         episode_id = self.Episode.header.episode_id,
         step_index = #self.Episode.steps,
-        timestamp_ms = timestampMs,
+        timestamp_ms = timestamp,
         dt_ms = dtMs,
         self_state = selfState,
         target_state = targetState,
         relative = {
-            x = localOffset.X, y = localOffset.Y, z = localOffset.Z,
+            x = localOffset.X,
+            y = localOffset.Y,
+            z = localOffset.Z,
             horizontal_distance = horizontalDistance,
             distance = distance,
             closing_speed = -Vector3.new(relativeVelocity.X, 0, relativeVelocity.Z):Dot(forward),
             lateral_speed = Vector3.new(relativeVelocity.X, 0, relativeVelocity.Z):Dot(lateral),
             height_advantage = -worldOffset.Y,
-            line_of_sight = lineOfSight(character, target, root, targetRoot),
+            line_of_sight = lineOfSight(character, target, selfRoot, targetRoot),
             in_m1_range = distance <= 5.65,
             in_move_range = distance <= 30,
-            self_angle_error_deg = root and angleError(root.CFrame.LookVector, worldOffset) or 0,
-            target_angle_error_deg = targetRoot and angleError(targetRoot.CFrame.LookVector, -worldOffset) or 0,
+            self_angle_error_deg = 0,
+            target_angle_error_deg = 0,
         },
         combat = {
             self_hitstun_remaining_ms = 0,
@@ -444,13 +369,15 @@ function Collector:_observation(character, target, timestampMs, dtMs)
             target_immunity_remaining_ms = 0,
             last_hit_age_ms = 5000,
             last_damage_age_ms = 5000,
-            combo_counter = selfCombo,
-            target_combo_counter = targetCombo,
+            combo_counter = selfState.m1_stage,
+            target_combo_counter = targetState.m1_stage,
             confidence = 0.45,
         },
         cooldowns = {
-            move1_ready = moves[1].ready, move2_ready = moves[2].ready,
-            move3_ready = moves[3].ready, move4_ready = moves[4].ready,
+            move1_ready = moves[1].ready,
+            move2_ready = moves[2].ready,
+            move3_ready = moves[3].ready,
+            move4_ready = moves[4].ready,
             move1_remaining_ms = moves[1].fill_ratio * 30000,
             move2_remaining_ms = moves[2].fill_ratio * 30000,
             move3_remaining_ms = moves[3].fill_ratio * 30000,
@@ -460,10 +387,14 @@ function Collector:_observation(character, target, timestampMs, dtMs)
             remaining_time_is_estimate = true,
             confidence = 0.9,
         },
-        network = { ping_ms = ping, jitter_ms = jitter, source = "Stats.Network.ServerStatsItem.Data Ping" },
+        network = {
+            ping_ms = currentPing,
+            jitter_ms = jitter,
+            source = "Stats.Network.ServerStatsItem.Data Ping",
+        },
         history = {
             last_action_success = self.LastActionSuccess,
-            last_action_age_ms = self.LastActionMs and math.max(0, timestampMs - self.LastActionMs) or 5000,
+            last_action_age_ms = self.LastActionMs and math.max(0, timestamp - self.LastActionMs) or 5000,
         },
         feature_vector = {},
     }
@@ -522,62 +453,49 @@ function Collector:_sample()
         return
     end
 
-    local entityKey = character:GetDebugId() .. ":" .. target:GetDebugId()
-    if self.LastEntities ~= entityKey then
-        self.LastEntities = entityKey
-        self.Episode.header.character = character.Name
-        self.Episode.header.target = target.Name
-        self.LastSelfHealth = nil
-        self.LastTargetHealth = nil
-        self:_attach(character, target)
-    end
+    self.Episode.header.character = character.Name
+    self.Episode.header.target = target.Name
 
     local timestamp = nowMs()
-    local dt = self.LastSampleMs and clamp(timestamp - self.LastSampleMs, 0, 1000) or 0
+    local dtMs = self.LastSampleMs and clamp(timestamp - self.LastSampleMs, 0, 1000) or 0
     self.LastSampleMs = timestamp
-    local observation = self:_observation(character, target, timestamp, dt)
-    local events = self.EventQueue
-    self.EventQueue = {}
+    local observation = self:_observation(character, target, timestamp, dtMs)
     local confirmations = self.PendingConfirmations
     self.PendingConfirmations = {}
+
     local damageDealt = 0
     local damageReceived = 0
-
     if self.LastSelfHealth and observation.self_state.health < self.LastSelfHealth then
         damageReceived = self.LastSelfHealth - observation.self_state.health
         table.insert(confirmations, {
-            kind = "damage_received", timestamp_ms = timestamp, amount = damageReceived,
-            source = "humanoid_health_delta", confidence = 1,
+            kind = "damage_received",
+            timestamp_ms = timestamp,
+            amount = damageReceived,
+            source = "humanoid_health_delta",
+            confidence = 1,
         })
     end
     if self.LastTargetHealth and observation.target_state.health < self.LastTargetHealth then
         damageDealt = self.LastTargetHealth - observation.target_state.health
         table.insert(confirmations, {
-            kind = "damage_dealt", timestamp_ms = timestamp, amount = damageDealt,
-            source = "target_humanoid_health_delta", confidence = 1,
+            kind = "damage_dealt",
+            timestamp_ms = timestamp,
+            amount = damageDealt,
+            source = "target_humanoid_health_delta",
+            confidence = 1,
         })
     end
     self.LastSelfHealth = observation.self_state.health
     self.LastTargetHealth = observation.target_state.health
 
-    for _, event in ipairs(events) do
-        if event.kind == "animation_played" or event.kind == "marker_added"
-            or event.kind == "marker_removed" or event.kind == "value_changed" then
-            table.insert(confirmations, {
-                kind = event.kind,
-                timestamp_ms = event.timestamp_ms,
-                source = "direct_signal",
-                confidence = 1,
-                payload = event.payload,
-            })
-        end
-    end
-
+    local events = self.EventQueue
+    self.EventQueue = {}
     local actionRequest = self.PendingActionRequest
     local executorResult = self.PendingExecutorResult or {
         status = actionRequest and "unobserved" or "no_request",
         source = "collector_observation_only",
     }
+
     if actionRequest then
         self.LastActionMs = timestamp
     end
@@ -611,7 +529,6 @@ function Collector:Start(options)
     end
     options = options or {}
     disconnectAll(self.Connections)
-    disconnectAll(self.EntityConnections)
 
     local sampleHz = clamp(options.sample_hz or 15, 1, 60)
     local maxSteps = math.floor(clamp(options.max_steps or 18000, 1, 100000))
@@ -631,7 +548,7 @@ function Collector:Start(options)
         schema_version = SCHEMA_VERSION,
         header = {
             episode_id = options.episode_id or HttpService:GenerateGUID(false),
-            agent_build = "0.2.0-collector",
+            agent_build = "0.2.1-collector",
             collector_version = VERSION,
             stream_format = STREAM_FORMAT,
             started_at_ms = started,
@@ -659,10 +576,8 @@ function Collector:Start(options)
     self.LastSampleMs = nil
     self.LastActionMs = nil
     self.LastActionSuccess = 0
-    self.LastEntities = nil
     self.Active = true
 
-    self:_attach(character, target)
     self:_connect(UserInputService.InputBegan, function(input, processed)
         self:_event("input_began", {
             key_code = tostring(input.KeyCode),
@@ -692,7 +607,10 @@ function Collector:Start(options)
         end
     end)
 
-    self:_event("episode_started", { episode_id = self.Episode.header.episode_id, sample_hz = sampleHz })
+    self:_event("episode_started", {
+        episode_id = self.Episode.header.episode_id,
+        sample_hz = sampleHz,
+    })
     return self.Episode.header.episode_id
 end
 
@@ -702,7 +620,6 @@ function Collector:Stop(reason)
     end
     self.Active = false
     disconnectAll(self.Connections)
-    disconnectAll(self.EntityConnections)
     if not self.Episode.terminal then
         local ended = nowMs()
         self.Episode.terminal = {
@@ -756,6 +673,7 @@ function Collector:GetSummary()
     if not episode then
         return { active = self.Active, version = VERSION, steps = 0 }
     end
+
     local damageDealt = 0
     local damageReceived = 0
     local requests = 0
@@ -768,6 +686,7 @@ function Collector:GetSummary()
         confirmations += #step.confirmations
         rawEvents += #step.raw_events
     end
+
     return {
         active = self.Active,
         version = VERSION,
@@ -815,6 +734,7 @@ function Collector:Export(path)
     local episode = self:Stop("exported")
     assert(episode, "no episode to export")
     local directory = self.Config.export_directory
+
     if type(makefolder) == "function" and type(isfolder) == "function" then
         local current = ""
         for segment in string.gmatch(directory, "[^/\\]+") do
@@ -824,6 +744,7 @@ function Collector:Export(path)
             end
         end
     end
+
     path = path or (directory .. "/" .. episode.header.episode_id .. ".jsonl")
     local lines = {
         HttpService:JSONEncode({ record_type = "header", schema_version = SCHEMA_VERSION, header = episode.header }),
@@ -832,10 +753,16 @@ function Collector:Export(path)
         table.insert(lines, HttpService:JSONEncode({ record_type = "step", schema_version = SCHEMA_VERSION, step = step }))
     end
     table.insert(lines, HttpService:JSONEncode({ record_type = "terminal", schema_version = SCHEMA_VERSION, terminal = episode.terminal }))
-    local payload = table.concat(lines, "\n") .. "\n"
+
+    local payload = table.concat(lines, string.char(10)) .. string.char(10)
     assert(type(writefile) == "function", "writefile is unavailable")
     writefile(path, payload)
-    return { path = path, bytes = #payload, lines = #lines, steps = #episode.steps }
+    return {
+        path = path,
+        bytes = #payload,
+        lines = #lines,
+        steps = #episode.steps,
+    }
 end
 
 function Collector:Destroy()
