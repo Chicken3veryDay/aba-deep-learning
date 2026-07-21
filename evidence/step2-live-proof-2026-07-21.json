@@ -1,0 +1,48 @@
+{
+  "schema_version": "1.0.0",
+  "evidence_type": "step2_live_collector_proof",
+  "recorded_at": "2026-07-21",
+  "repository": "Chicken3veryDay/aba-deep-learning",
+  "source_commit": "44a2175e13f843d0795e23ababf39eadda303546",
+  "client": {
+    "session_name": "devplacetesting10",
+    "place_id": 1458767429,
+    "environment": "authorized developer testing",
+    "target": "Punish Dummy"
+  },
+  "collector": {
+    "version": "0.2.1",
+    "schema_version": "1.0.0",
+    "observation_only": true,
+    "sample_hz": 15,
+    "steps": 20,
+    "feature_count_per_step": 64,
+    "first_step_index": 0,
+    "last_step_index": 19,
+    "action_mask_confidence": 0.82,
+    "move_slots_last_step": [true, true, true, true]
+  },
+  "no_action_proof": {
+    "legacy_v3_enabled": false,
+    "collector_caused_position_delta_studs": 0,
+    "remote_dispatch_used": false,
+    "input_simulation_used": false
+  },
+  "export": {
+    "client_path": "aba_deep_learning/episodes/canonical-live-proof-44a2175.jsonl",
+    "records": 22,
+    "bytes": 76232,
+    "sha256": "20cc974f9b50726504317feb74b62d45ac7deb5ed47a2ac5aae44a893d097dee",
+    "header_episode_id": "canonical-live-proof-44a2175",
+    "terminal_reason": "max_steps",
+    "terminal_steps": 20
+  },
+  "validation": {
+    "collector_validate": true,
+    "json_decode_all_records": true,
+    "strictly_increasing_indices": true,
+    "feature_shape_valid": true,
+    "episode_identity_consistent": true,
+    "errors": []
+  }
+}
