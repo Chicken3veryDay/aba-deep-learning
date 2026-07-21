@@ -25,6 +25,21 @@ The learned policy will request high-level combat actions. A deterministic runti
 - no remote dispatch or combat execution
 - live feature-shape, timeline, mask, export, and no-action proof
 
+### Step 3: dataset pipeline
+
+**Implemented.**
+
+- recursive JSONL episode discovery and ingestion
+- separate observation and behavior-cloning quality gates
+- finite, bounded, fixed-width feature validation
+- monotonic timing, gap, mask, target-continuity, and label-coverage checks
+- deterministic segmentation that never crosses timing gaps or target changes
+- episode-grouped train, validation, and test splits
+- deterministic split seed and stable segment IDs
+- per-feature mean, standard deviation, minimum, and maximum
+- explicit rejection reasons in the dataset manifest
+- dependency-free CLI and regression coverage
+
 ## Repository boundary
 
 ```text
@@ -34,7 +49,8 @@ live game state
   -> optional teacher/policy request
   -> executor result and confirmations
   -> JSONL episode
-  -> offline validation and dataset pipeline
+  -> quality gates and segmentation
+  -> leakage-safe train / validation / test artifacts
 ```
 
 ## Live usage
@@ -44,8 +60,6 @@ Deploy:
 ```text
 runtime_luau/collector_bundle.client.luau
 ```
-
-The MCP can execute the file from a host path, accept inline source on updated installations, or load a pinned public GitHub commit in an authorized test client.
 
 Then run:
 
@@ -79,12 +93,34 @@ Canonical source commit `44a2175e13f843d0795e23ababf39eadda303546` was loaded di
 
 See `evidence/step2-live-proof-2026-07-21.json`.
 
+## Build a dataset
+
+Observation or representation-learning data:
+
+```bash
+python scripts/build_dataset.py episodes/ \
+  --output datasets/step3-observation \
+  --task observation
+```
+
+Behavior-cloning data:
+
+```bash
+python scripts/build_dataset.py episodes/ \
+  --output datasets/step3-bc \
+  --task behavior_cloning \
+  --min-action-coverage 0.75
+```
+
+See `docs/DATASET.md` for quality scoring, segmentation, and split rules.
+
 ## Validation
 
 ```bash
+python -m pip install -e .
 python -m unittest discover -s tests -v
 ```
 
 ## Next phase
 
-Step 3 is the dataset pipeline: ingestion, normalization, episode segmentation, quality gates, train/validation/test splitting, dataset statistics, and replay inspection.
+Step 4 is a compact recurrent baseline: sequence dataloading, masked multi-head behavior cloning, outcome prediction auxiliaries, deterministic baselines, offline evaluation, and model export. Live policy execution remains disabled until offline metrics pass explicit gates.
