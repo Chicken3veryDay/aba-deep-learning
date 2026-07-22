@@ -1,0 +1,44 @@
+{
+  "registry_version": "1.0.0",
+  "rules": {
+    "mixed_compatibility_groups": "must be partitioned; never concatenated",
+    "undeclared_64": "legacy inference allowed by default",
+    "undeclared_72": "rejected as ambiguous"
+  },
+  "schemas": [
+    {
+      "aliases": [
+        "observation_v1",
+        "feature_vector_v1",
+        "legacy_64"
+      ],
+      "compatibility_group": "observation_v1_64",
+      "schema_id": "observation_v1_64",
+      "version": "1.0.0",
+      "width": 64
+    },
+    {
+      "aliases": [
+        "feature_vector_v2",
+        "human_feature_vector_v2",
+        "camera_feature_vector_v2",
+        "human_camera_v2"
+      ],
+      "compatibility_group": "human_camera_v2_72",
+      "schema_id": "human_camera_v2_72",
+      "version": "2.0.0",
+      "width": 72
+    },
+    {
+      "aliases": [
+        "ranked_feature_vector_v3_explicit",
+        "ranked_explicit_v3",
+        "feature_vector_v3_explicit"
+      ],
+      "compatibility_group": "ranked_explicit_v3_72",
+      "schema_id": "ranked_explicit_v3_72",
+      "version": "3.0.0",
+      "width": 72
+    }
+  ]
+}
