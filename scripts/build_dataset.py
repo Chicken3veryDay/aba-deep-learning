@@ -15,11 +15,11 @@ from aba_deep_learning.dataset import (  # noqa: E402
     build_dataset,
     build_partitioned_datasets,
     discover_episode_files,
-    load_episodes,
     write_dataset,
     write_partitioned_datasets,
 )
 from aba_deep_learning.feature_schemas import list_feature_schemas  # noqa: E402
+from aba_deep_learning.stream import read_episode_stream  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
@@ -84,7 +84,13 @@ def main() -> None:
         allow_legacy_64_inference=not args.no_legacy_64_inference,
         require_action_masks=not args.allow_missing_action_masks,
     )
-    episodes = load_episodes(paths)
+    episodes = [
+        read_episode_stream(
+            path,
+            require_action_masks=config.require_action_masks,
+        )
+        for path in paths
+    ]
 
     if args.partition_by_schema:
         datasets = build_partitioned_datasets(
