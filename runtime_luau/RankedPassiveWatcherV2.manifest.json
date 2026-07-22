@@ -1,0 +1,22 @@
+{
+  "artifact": "runtime_luau/RankedPassiveWatcherV2.runtime.luau",
+  "bytes": 39176,
+  "executor_integration_allowed": false,
+  "feature_schema_id": "ranked_explicit_v3_72",
+  "feature_width": 72,
+  "passive_invariants": {
+    "creates_ui": false,
+    "executes_remote_calls": false,
+    "simulates_input": false
+  },
+  "sha256": "d52b1795114dc287f1f91f33c487c96ad5f44f4694694b9202b0e8b75feff63f",
+  "stream_format": "aba_ranked_passive_jsonl_v3",
+  "validation": {
+    "roblox_compile_ok": true,
+    "roblox_forbidden_api_scan": [],
+    "roblox_singleton_same_object": true,
+    "roblox_waiting_state": true,
+    "source_fetched_from_github_branch": true
+  },
+  "version": "0.2.3-ranked-full-passive"
+}
