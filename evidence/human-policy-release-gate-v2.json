@@ -1,0 +1,127 @@
+{
+  "aggregate_coverage": {
+    "block_start": 33,
+    "block_stop": 33,
+    "damage_dealt_frames": 101,
+    "damage_received_frames": 32,
+    "dodge": 184,
+    "jump": 123,
+    "m1": 468,
+    "move1": 36,
+    "move2": 17,
+    "move3": 9,
+    "move4": 3,
+    "transform": 5
+  },
+  "blocking_checks": [
+    {
+      "actual": 1,
+      "id": "same_schema_independent_human_episodes",
+      "required": 2
+    },
+    {
+      "actual": 2,
+      "id": "schema_partition_count",
+      "required": 1
+    },
+    {
+      "actual": 0.3764553686934,
+      "id": "movement_vector_accuracy",
+      "required": 0.75
+    },
+    {
+      "actual": 0.61190168175938,
+      "id": "movement_axis_accuracy",
+      "required": 0.85
+    },
+    {
+      "actual": 0.21686746987952,
+      "id": "m1_precision",
+      "required": 0.5
+    },
+    {
+      "actual": 0.44444444444444,
+      "id": "m1_recall",
+      "required": 0.5
+    },
+    {
+      "actual": 0.054054054054054,
+      "id": "dodge_f1",
+      "required": 0.4
+    },
+    {
+      "actual": 0.12121212121212,
+      "id": "jump_f1",
+      "required": 0.4
+    },
+    {
+      "actual": 468,
+      "id": "m1_examples_corpus",
+      "required": 500
+    },
+    {
+      "actual": 123,
+      "id": "jump_examples_corpus",
+      "required": 150
+    },
+    {
+      "actual": 33,
+      "id": "block_start_examples_corpus",
+      "required": 100
+    },
+    {
+      "actual": 33,
+      "id": "block_stop_examples_corpus",
+      "required": 100
+    },
+    {
+      "actual": 36,
+      "id": "move_slot_1_examples_corpus",
+      "required": 40
+    },
+    {
+      "actual": 17,
+      "id": "move_slot_2_examples_corpus",
+      "required": 40
+    },
+    {
+      "actual": 9,
+      "id": "move_slot_3_examples_corpus",
+      "required": 40
+    },
+    {
+      "actual": 3,
+      "id": "move_slot_4_examples_corpus",
+      "required": 40
+    },
+    {
+      "actual": 32,
+      "id": "damage_received_frames_corpus",
+      "required": 100
+    }
+  ],
+  "corpus_package": "aba-human-corpus-v2",
+  "evaluated_at_ms": 1784756315103,
+  "executor_integration_allowed": false,
+  "gate_id": "human-policy-release-v2",
+  "gate_version": "0.2.0",
+  "next_blockers": [
+    "collect at least two more independent explicit-v3 ranked or authorized training episodes",
+    "use episode-level splits instead of within-match temporal splits",
+    "increase M1, jump, block, and move-slot coverage",
+    "retrain and pass untouched episode-level model metrics"
+  ],
+  "passed_checks": [
+    "independent_human_episodes_total",
+    "sprint_accuracy",
+    "runtime_integrity_files",
+    "controller_contamination_guard",
+    "dodge_examples_corpus"
+  ],
+  "release_eligible": false,
+  "schema_partitions": {
+    "feature_vector_v2": 1,
+    "ranked_feature_vector_v3_explicit": 1
+  },
+  "schema_version": "2.0.0"
+}
