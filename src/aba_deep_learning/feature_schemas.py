@@ -33,6 +33,7 @@ class FeatureSchema:
     compatibility_group: str
     description: str
     aliases: tuple[str, ...] = ()
+    reference_producer_sha256: str | None = None
 
     def matches(self, value: str) -> bool:
         normalized = value.strip().lower()
@@ -52,7 +53,6 @@ _SCHEMAS = (
             "observation_v1",
             "feature_vector_v1",
             "legacy_64",
-            "observation_v1_64",
         ),
     ),
     FeatureSchema(
@@ -84,6 +84,10 @@ _SCHEMAS = (
             "ranked_feature_vector_v3_explicit",
             "ranked_explicit_v3",
             "feature_vector_v3_explicit",
+        ),
+        reference_producer_sha256=(
+            "c695c08783c53b8cf7c7a9741ed6dd433a3ffb75d9f22af0"
+            "b109f380e19dbebd"
         ),
     ),
 )
