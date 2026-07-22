@@ -13,14 +13,19 @@ if str(SRC) not in sys.path:
 from aba_deep_learning.dataset import (  # noqa: E402
     DatasetConfig,
     build_dataset,
+    build_partitioned_datasets,
     discover_episode_files,
     load_episodes,
     write_dataset,
+    write_partitioned_datasets,
 )
+from aba_deep_learning.feature_schemas import list_feature_schemas  # noqa: E402
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Build deterministic ABA learning datasets")
+    parser = argparse.ArgumentParser(
+        description="Build deterministic, schema-safe ABA learning datasets"
+    )
     parser.add_argument("inputs", nargs="+", help="Episode JSONL files or directories")
     parser.add_argument("--output", required=True, help="Output dataset directory")
     parser.add_argument(
@@ -35,6 +40,26 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-quality-score", type=float, default=0.70)
     parser.add_argument("--min-action-coverage", type=float, default=0.50)
     parser.add_argument("--split-seed", default="aba-step3-v1")
+    parser.add_argument(
+        "--feature-schema",
+        choices=tuple(schema.schema_id for schema in list_feature_schemas()),
+        help="Require one canonical feature schema",
+    )
+    parser.add_argument(
+        "--partition-by-schema",
+        action="store_true",
+        help="Write one isolated dataset per feature schema",
+    )
+    parser.add_argument(
+        "--allow-missing-action-masks",
+        action="store_true",
+        help="Do not reject passive-human streams solely for missing action masks",
+    )
+    parser.add_argument(
+        "--no-legacy-64-inference",
+        action="store_true",
+        help="Require an explicit feature schema even for 64-feature streams",
+    )
     return parser.parse_args()
 
 
@@ -55,16 +80,34 @@ def main() -> None:
         min_quality_score=args.min_quality_score,
         min_action_coverage=args.min_action_coverage,
         split_seed=args.split_seed,
+        feature_schema_id=args.feature_schema,
+        allow_legacy_64_inference=not args.no_legacy_64_inference,
+        require_action_masks=not args.allow_missing_action_masks,
     )
     episodes = load_episodes(paths)
-    dataset = build_dataset(episodes, config, task=args.task)
-    written = write_dataset(dataset, args.output)
+
+    if args.partition_by_schema:
+        datasets = build_partitioned_datasets(
+            episodes,
+            config,
+            task=args.task,
+        )
+        written = write_partitioned_datasets(datasets, args.output)
+        statistics = {
+            schema_id: dataset["statistics"]
+            for schema_id, dataset in datasets.items()
+        }
+    else:
+        dataset = build_dataset(episodes, config, task=args.task)
+        written = write_dataset(dataset, args.output)
+        statistics = dataset["statistics"]
+
     print(
         json.dumps(
             {
                 "inputs": [str(path) for path in paths],
                 "output": written,
-                "statistics": dataset["statistics"],
+                "statistics": statistics,
             },
             indent=2,
             sort_keys=True,
