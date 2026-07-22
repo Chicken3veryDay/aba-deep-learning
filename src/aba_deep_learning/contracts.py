@@ -177,6 +177,7 @@ def validate_step(
     previous_index: int | None = None,
     *,
     expected_feature_width: int | None = FEATURE_VECTOR_LENGTH,
+    require_action_mask: bool = True,
 ) -> int:
     step = _mapping(value, "step")
     observation = step.get("observation")
@@ -187,7 +188,10 @@ def validate_step(
     index = int(observation["step_index"])
     if previous_index is not None and index <= previous_index:
         raise ContractError("step indices must be strictly increasing")
-    validate_action_mask(step.get("action_mask"))
+    if require_action_mask:
+        validate_action_mask(step.get("action_mask"))
+    elif step.get("action_mask") is not None:
+        validate_action_mask(step["action_mask"])
     if step.get("action_request") is not None:
         validate_action_request(step["action_request"])
     _mapping(step.get("executor_result"), "step.executor_result")
