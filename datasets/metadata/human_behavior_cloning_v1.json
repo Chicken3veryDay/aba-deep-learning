@@ -1,0 +1,58 @@
+{
+  "coverage_gaps": [
+    "block_start_and_stop",
+    "move_slot_3",
+    "move_slot_4",
+    "damage_received_and_defense",
+    "non_sprint_movement"
+  ],
+  "created_at_ms": 1784685990331,
+  "dataset_id": "aba-human-bc-v1",
+  "episodes": [
+    {
+      "alignment": {
+        "limit_ms": 100,
+        "max_ms": 2,
+        "mean_ms": 0.058266839858972
+      },
+      "counts": {
+        "block_start": 0,
+        "block_stop": 0,
+        "damage_dealt_frames": 14,
+        "damage_received_frames": 0,
+        "dodge": 98,
+        "idle": 883,
+        "jump": 83,
+        "m1": 415,
+        "move1": 25,
+        "move2": 8,
+        "move3": 2,
+        "move4": 1,
+        "moving": 4506,
+        "sprint": 5230,
+        "transform": 0
+      },
+      "duration_ms": 359268,
+      "episode_id": "human-demo-block-dummy-1-clean-1784685050333",
+      "path": "aba_deep_learning/demonstrations/human-demo-block-dummy-1-clean-1784685050333.jsonl",
+      "segments": 448,
+      "split": "train",
+      "steps": 5389,
+      "target": "Block Dummy 1"
+    }
+  ],
+  "feature_schema": "feature_vector_v2",
+  "feature_width": 72,
+  "reason": "only one eligible human episode; no episode-level validation split",
+  "release_eligible": false,
+  "schema_version": "1.0.0",
+  "sequence_length": 24,
+  "status": "training_pool_only",
+  "stride": 12,
+  "totals": {
+    "duration_ms": 359268,
+    "episodes": 1,
+    "segments": 448,
+    "steps": 5389
+  }
+}
