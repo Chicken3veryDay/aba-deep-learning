@@ -1,0 +1,26 @@
+{
+  "artifact": "runtime_luau/RankedWatcherBootstrap.runtime.luau",
+  "bootstrap_bytes": 6243,
+  "bootstrap_sha256": "f9b0ed9baada38e8fffb9691680ccb862bcd6b799d8809f49437d607e5743152",
+  "executor_integration_allowed": false,
+  "installed_watcher": {
+    "bytes": 39176,
+    "commit": "74b3b6278d25b97981dfdfe278a665525a2d608b",
+    "sha256": "d52b1795114dc287f1f91f33c487c96ad5f44f4694694b9202b0e8b75feff63f",
+    "version": "0.2.3-ranked-full-passive"
+  },
+  "roblox_validation": {
+    "bootstrap_compile_ok": true,
+    "controller_enabled_after_test": false,
+    "installed_source_hash_verified": true,
+    "receipt_job_id": "581bd9ad-4bba-4caf-90e1-27974bf8ae24",
+    "receipt_verified": true,
+    "same_object_double_launch": true,
+    "status_active": false,
+    "status_passive": true,
+    "status_waiting": true,
+    "test_watcher_stopped": true
+  },
+  "status": "verified",
+  "version": "0.1.0"
+}
