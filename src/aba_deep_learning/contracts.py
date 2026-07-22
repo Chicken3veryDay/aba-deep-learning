@@ -4,6 +4,11 @@ import math
 from collections.abc import Mapping, Sequence
 from typing import Any
 
+from .feature_schemas import (
+    FeatureSchemaError,
+    get_feature_schema,
+)
+
 SCHEMA_VERSION = "1.0.0"
 FEATURE_VECTOR_LENGTH = 64
 
@@ -36,7 +41,12 @@ def _string(value: Any, path: str) -> str:
     return value
 
 
-def _integer(value: Any, path: str, minimum: int = 0, maximum: int | None = None) -> int:
+def _integer(
+    value: Any,
+    path: str,
+    minimum: int = 0,
+    maximum: int | None = None,
+) -> int:
     if isinstance(value, bool) or not isinstance(value, int):
         raise ContractError(f"{path} must be an integer")
     if value < minimum or (maximum is not None and value > maximum):
@@ -44,7 +54,12 @@ def _integer(value: Any, path: str, minimum: int = 0, maximum: int | None = None
     return value
 
 
-def _number(value: Any, path: str, minimum: float | None = None, maximum: float | None = None) -> float:
+def _number(
+    value: Any,
+    path: str,
+    minimum: float | None = None,
+    maximum: float | None = None,
+) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise ContractError(f"{path} must be numeric")
     result = float(value)
@@ -62,7 +77,22 @@ def _version(obj: Mapping[str, Any], path: str) -> None:
         raise ContractError(f"{path}.schema_version must equal {SCHEMA_VERSION!r}")
 
 
-def validate_observation(value: Any) -> None:
+def _declared_observation_width(obj: Mapping[str, Any]) -> int | None:
+    for key in ("feature_schema_id", "feature_schema", "feature_vector_schema"):
+        value = obj.get(key)
+        if isinstance(value, str) and value:
+            try:
+                return get_feature_schema(value).width
+            except FeatureSchemaError as exc:
+                raise ContractError(str(exc)) from exc
+    return None
+
+
+def validate_observation(
+    value: Any,
+    *,
+    expected_feature_width: int | None = FEATURE_VECTOR_LENGTH,
+) -> None:
     obj = _mapping(value, "observation")
     _version(obj, "observation")
     _string(obj.get("episode_id"), "observation.episode_id")
@@ -79,8 +109,23 @@ def validate_observation(value: Any) -> None:
     vector = obj.get("feature_vector")
     if not isinstance(vector, Sequence) or isinstance(vector, (str, bytes)):
         raise ContractError("observation.feature_vector must be an array")
-    if len(vector) != FEATURE_VECTOR_LENGTH:
-        raise ContractError(f"feature_vector must contain {FEATURE_VECTOR_LENGTH} values")
+
+    declared_width = _declared_observation_width(obj)
+    width = expected_feature_width
+    if declared_width is not None:
+        if width is not None and width != declared_width:
+            raise ContractError(
+                f"observation feature schema expects width {declared_width}, "
+                f"stream expects {width}"
+            )
+        width = declared_width
+    if width is None:
+        raise ContractError(
+            "expected_feature_width is required when the observation does not "
+            "declare a feature schema"
+        )
+    if len(vector) != width:
+        raise ContractError(f"feature_vector must contain {width} values")
     for index, item in enumerate(vector):
         _number(item, f"observation.feature_vector[{index}]")
 
@@ -127,10 +172,18 @@ def validate_action_mask(value: Any) -> None:
     _number(obj.get("confidence"), "mask.confidence", 0, 1)
 
 
-def validate_step(value: Any, previous_index: int | None = None) -> int:
+def validate_step(
+    value: Any,
+    previous_index: int | None = None,
+    *,
+    expected_feature_width: int | None = FEATURE_VECTOR_LENGTH,
+) -> int:
     step = _mapping(value, "step")
     observation = step.get("observation")
-    validate_observation(observation)
+    validate_observation(
+        observation,
+        expected_feature_width=expected_feature_width,
+    )
     index = int(observation["step_index"])
     if previous_index is not None and index <= previous_index:
         raise ContractError("step indices must be strictly increasing")
