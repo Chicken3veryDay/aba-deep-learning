@@ -51,7 +51,11 @@ def _header_schema(header: Mapping[str, Any]) -> tuple[str, int]:
     return schema.schema_id, schema.width
 
 
-def validate_stream_records(records: Iterable[Any]) -> dict[str, Any]:
+def validate_stream_records(
+    records: Iterable[Any],
+    *,
+    require_action_masks: bool = True,
+) -> dict[str, Any]:
     header: Mapping[str, Any] | None = None
     terminal: Mapping[str, Any] | None = None
     steps: list[Mapping[str, Any]] = []
@@ -93,6 +97,7 @@ def validate_stream_records(records: Iterable[Any]) -> dict[str, Any]:
                 candidate,
                 previous_index,
                 expected_feature_width=feature_width,
+                require_action_mask=require_action_masks,
             )
             if candidate["observation"]["episode_id"] != header["episode_id"]:
                 raise ContractError("step episode_id does not match header")
@@ -137,6 +142,7 @@ def read_episode_stream(
     source: str | Path | TextIO,
     *,
     ranked_action_shift: int = 1,
+    require_action_masks: bool = True,
 ) -> dict[str, Any]:
     if hasattr(source, "read"):
         records = parse_jsonl(source)
@@ -146,7 +152,10 @@ def read_episode_stream(
 
     stream_format = _stream_format(records)
     if stream_format == STREAM_FORMAT:
-        return validate_stream_records(records)
+        return validate_stream_records(
+            records,
+            require_action_masks=require_action_masks,
+        )
 
     from .ranked_stream import (  # imported lazily to avoid a module cycle
         RANKED_STREAM_FORMAT,
