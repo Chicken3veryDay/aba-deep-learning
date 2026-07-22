@@ -2,117 +2,96 @@
 
 Fresh hybrid learning system for an authorized ABA developer-testing environment.
 
-The learned policy will request high-level combat actions. A deterministic runtime remains responsible for legality, cooldowns, stun/recovery gating, input cleanup, and confirmations.
+The learned policy requests high-level combat actions. A deterministic runtime remains responsible for legality, cooldowns, stun/recovery gating, input cleanup, confirmations, and lifecycle recovery. Learned-policy executor integration remains disabled until independent episode-level evaluation passes explicit release gates.
 
-## Current phase
+## Current state
 
-### Step 1: contracts
+### Contracts and collection
 
-- versioned observation contract
-- frozen 64-value feature vector
-- high-level action requests
-- legal action masks
-- append-only episode records
+- versioned observations, action requests, masks, executor results, confirmations, and terminal records
+- observation-only live collector
+- human demonstration recorder with controller-contamination abort
+- passive ranked watcher with teleport persistence, periodic flushes, singleton locking, HUD-noise filtering, and automatic match-result sealing
+- no watcher UI, input simulation, gameplay control, or remote calls
 
-### Step 2: authoritative collector
+### Schema-safe dataset pipeline
 
-**Complete and live-verified.**
+The repository now recognizes three incompatible feature contracts:
 
-- observation-only runtime
-- synchronized health, movement, blocking, combo, marker, animation, cooldown, ping, and input signals
-- optional teacher or policy action requests
-- deterministic JSONL export
-- no remote dispatch or combat execution
-- live feature-shape, timeline, mask, export, and no-action proof
+| Schema | Width | Status |
+|---|---:|---|
+| `observation_v1_64` | 64 | Legacy authoritative collector |
+| `human_camera_v2_72` | 72 | Human recorder, legacy 64 plus camera fields |
+| `ranked_explicit_v3_72` | 72 | Explicit ranked watcher |
 
-### Step 3: dataset pipeline
+Two 72-feature schemas are not assumed compatible merely because their widths match.
 
-**Implemented.**
+The dataset builder now:
 
-- recursive JSONL episode discovery and ingestion
-- separate observation and behavior-cloning quality gates
-- finite, bounded, fixed-width feature validation
-- monotonic timing, gap, mask, target-continuity, and label-coverage checks
-- deterministic segmentation that never crosses timing gaps or target changes
-- episode-grouped train, validation, and test splits
-- deterministic split seed and stable segment IDs
-- per-feature mean, standard deviation, minimum, and maximum
-- explicit rejection reasons in the dataset manifest
-- dependency-free CLI and regression coverage
+- canonicalizes declared schema IDs and aliases
+- rejects undeclared 72-feature streams as ambiguous
+- validates declared width against the registry
+- refuses mixed compatibility groups in `build_dataset()`
+- supports isolated per-schema output through `build_partitioned_datasets()`
+- records schema ID, version, width, and compatibility group in manifests and segments
+- includes the schema ID in segment hashes
+- supports passive human labels without requiring an action mask when explicitly configured
 
-## Repository boundary
+See `docs/FEATURE_SCHEMAS.md`.
 
-```text
-live game state
-  -> collector
-  -> ObservationV1 + ActionMaskV1
-  -> optional teacher/policy request
-  -> executor result and confirmations
-  -> JSONL episode
-  -> quality gates and segmentation
-  -> leakage-safe train / validation / test artifacts
-```
+## Ranked evidence
 
-## Live usage
+Canonical clean ranked episode metadata:
 
-Deploy:
+- episode: `ranked-watch-v2-1784755145671`
+- duration: 187.501 seconds
+- steps: 2,806
+- feature schema: `ranked_explicit_v3_72`
+- feature width: 72
+- parse errors: 0
+- clean source SHA-256: `e0117462db8b9075033e2413984ea3552737e2c83f3a227df7608be35b0ab03c`
+- duplicate watcher stream: quarantined
+
+The multi-megabyte raw episode is intentionally not committed. Its immutable package and evidence live under:
 
 ```text
-runtime_luau/collector_bundle.client.luau
+datasets/metadata/ranked_match_1784755145671.package.json
+datasets/metadata/ranked_explicit_v3_v1.json
+evidence/ranked-capture-v2-closure.json
 ```
 
-Then run:
+## Model release status
 
-```lua
-local collector = getgenv().ABA_NEURAL_COLLECTOR
-collector:Start({ sample_hz = 15, max_steps = 9000 })
+The single-match ranked temporal baseline was rejected for distribution shift:
 
--- Play manually or run an observed teacher controller.
+- untouched test exact movement accuracy: 10.4%
+- test M1 precision: 1.6%
+- test block F1: 1.9%
 
-local result = collector:Export()
-print(result.path, result.steps, result.bytes)
-```
+It is prohibited from executor integration or production selection. See `evidence/ranked-temporal-mlp-v0-rejection.json`.
 
-## Step 2 live proof
-
-Canonical source commit `44a2175e13f843d0795e23ababf39eadda303546` was loaded directly into `devplacetesting10`.
-
-- collector version: `0.2.1`
-- schema: `1.0.0`
-- target: `Punish Dummy`
-- samples: `20` at `15 Hz`
-- feature count: `64` on every step
-- indices: `0..19`, strictly increasing
-- action-mask confidence: `0.82`
-- V3 controller enabled: `false`
-- collector-caused position delta: `0` studs
-- JSONL records: `22`
-- JSONL bytes: `76,232`
-- JSONL SHA-256: `20cc974f9b50726504317feb74b62d45ac7deb5ed47a2ac5aae44a893d097dee`
-- decode and reconstruction result: valid
-
-See `evidence/step2-live-proof-2026-07-21.json`.
+The next valid model milestone requires at least two additional independent `ranked_explicit_v3_72` episodes and episode-level train, validation, and test separation.
 
 ## Build a dataset
 
-Observation or representation-learning data:
+One schema only:
 
 ```bash
 python scripts/build_dataset.py episodes/ \
-  --output datasets/step3-observation \
-  --task observation
-```
-
-Behavior-cloning data:
-
-```bash
-python scripts/build_dataset.py episodes/ \
-  --output datasets/step3-bc \
+  --output datasets/ranked-v3 \
   --task behavior_cloning \
-  --min-action-coverage 0.75
+  --feature-schema ranked_explicit_v3_72 \
+  --allow-missing-action-masks
 ```
 
-See `docs/DATASET.md` for quality scoring, segmentation, and split rules.
+Safely partition a mixed corpus:
+
+```bash
+python scripts/build_dataset.py episodes/ \
+  --output datasets/by-schema \
+  --task observation \
+  --partition-by-schema
+```
 
 ## Validation
 
@@ -121,6 +100,4 @@ python -m pip install -e .
 python -m unittest discover -s tests -v
 ```
 
-## Next phase
-
-Step 4 is a compact recurrent baseline: sequence dataloading, masked multi-head behavior cloning, outcome prediction auxiliaries, deterministic baselines, offline evaluation, and model export. Live policy execution remains disabled until offline metrics pass explicit gates.
+The schema-safe v0.4.0 rewrite passes legacy 64-feature contract tests plus explicit 72-feature stream, ambiguity, partitioning, and mixed-schema refusal regressions.
