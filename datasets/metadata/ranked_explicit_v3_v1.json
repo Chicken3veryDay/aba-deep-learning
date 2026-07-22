@@ -1,0 +1,36 @@
+{
+  "created_at_ms": 1784756387264,
+  "dataset_id": "ranked-explicit-v3-v1",
+  "episode_id": "ranked-watch-v2-1784755145671",
+  "feature_schema": "ranked_feature_vector_v3_explicit",
+  "feature_width": 72,
+  "guard_frames": 24,
+  "label_alignment": "observation_t predicts held/discrete action at t+1",
+  "release_eligible": false,
+  "schema_version": "1.0.0",
+  "source_path": "aba_deep_learning/ranked_watch_v2/ranked-watch-v2-1784755145671.clean.jsonl",
+  "source_sha256": "e0117462db8b9075033e2413984ea3552737e2c83f3a227df7608be35b0ab03c",
+  "splits": {
+    "guard_frames": 48,
+    "test": {
+      "end": 2805,
+      "frames": 396,
+      "sequences": 32,
+      "start": 2409
+    },
+    "train": {
+      "end": 1963,
+      "frames": 1964,
+      "sequences": 162,
+      "start": 0
+    },
+    "validation": {
+      "end": 2384,
+      "frames": 397,
+      "sequences": 32,
+      "start": 1988
+    }
+  },
+  "training_eligible": true,
+  "warning": "single-episode blocked temporal split; not independent release validation"
+}
