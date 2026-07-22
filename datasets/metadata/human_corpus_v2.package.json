@@ -1,0 +1,39 @@
+{
+  "aggregate_action_coverage": {
+    "block_start": 33,
+    "block_stop": 33,
+    "damage_dealt_frames": 101,
+    "damage_received_frames": 32,
+    "dodge": 184,
+    "jump": 123,
+    "m1": 468,
+    "move1": 36,
+    "move2": 17,
+    "move3": 9,
+    "move4": 3,
+    "transform": 5
+  },
+  "compatibility": {
+    "direct_merge_allowed": false,
+    "reason": "feature ordering and semantics differ",
+    "required_resolution": "verified semantic adapter or additional independent episodes within one schema"
+  },
+  "created_at_ms": 1784756315103,
+  "episodes_total": 2,
+  "executor_integration_allowed": false,
+  "package_id": "aba-human-corpus-v2",
+  "release_eligible": false,
+  "schema_partitions": {
+    "feature_vector_v2": {
+      "episodes": 1,
+      "package": "aba_deep_learning/datasets/packages/human_dataset_v1.package.json",
+      "training_role": "training_pool"
+    },
+    "ranked_feature_vector_v3_explicit": {
+      "episodes": 1,
+      "package": "aba_deep_learning/datasets/packages/ranked_match_1784755145671.package.json",
+      "training_role": "research_and_independent_holdout"
+    }
+  },
+  "schema_version": "1.0.0"
+}
