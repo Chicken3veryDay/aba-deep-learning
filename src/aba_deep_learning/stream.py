@@ -167,6 +167,17 @@ def read_episode_stream(
             records,
             action_shift=ranked_action_shift,
         )
+
+    from .ranked_stream_v3 import (
+        RANKED_STREAM_FORMAT_V3,
+        convert_ranked_v3_records,
+    )
+
+    if stream_format == RANKED_STREAM_FORMAT_V3:
+        return convert_ranked_v3_records(
+            records,
+            action_shift=ranked_action_shift,
+        )
     raise ContractError(f"unsupported stream format: {stream_format!r}")
 
 
