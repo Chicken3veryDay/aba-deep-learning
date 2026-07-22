@@ -24,7 +24,9 @@ def parse_jsonl(lines: Iterable[str]) -> list[dict[str, Any]]:
         try:
             value = json.loads(stripped)
         except json.JSONDecodeError as exc:
-            raise ContractError(f"invalid JSON on line {line_number}: {exc.msg}") from exc
+            raise ContractError(
+                f"invalid JSON on line {line_number}: {exc.msg}"
+            ) from exc
         if not isinstance(value, dict):
             raise ContractError(f"line {line_number} must contain an object")
         records.append(value)
@@ -72,7 +74,10 @@ def validate_stream_records(records: Iterable[Any]) -> dict[str, Any]:
                 raise ContractError("header must be an object")
             if candidate.get("stream_format") != STREAM_FORMAT:
                 raise ContractError("unsupported stream format")
-            if not isinstance(candidate.get("episode_id"), str) or not candidate["episode_id"]:
+            if (
+                not isinstance(candidate.get("episode_id"), str)
+                or not candidate["episode_id"]
+            ):
                 raise ContractError("header.episode_id is required")
             feature_schema_id, feature_width = _header_schema(candidate)
             header = dict(candidate)
@@ -115,11 +120,45 @@ def validate_stream_records(records: Iterable[Any]) -> dict[str, Any]:
     }
 
 
-def read_episode_stream(source: str | Path | TextIO) -> dict[str, Any]:
+def _stream_format(records: list[dict[str, Any]]) -> str | None:
+    if not records:
+        return None
+    first = records[0]
+    if first.get("record_type") != "header":
+        return None
+    header = first.get("header")
+    if not isinstance(header, Mapping):
+        return None
+    value = header.get("stream_format")
+    return value if isinstance(value, str) else None
+
+
+def read_episode_stream(
+    source: str | Path | TextIO,
+    *,
+    ranked_action_shift: int = 1,
+) -> dict[str, Any]:
     if hasattr(source, "read"):
-        return validate_stream_records(parse_jsonl(source))
-    with Path(source).open("r", encoding="utf-8") as handle:
-        return validate_stream_records(parse_jsonl(handle))
+        records = parse_jsonl(source)
+    else:
+        with Path(source).open("r", encoding="utf-8") as handle:
+            records = parse_jsonl(handle)
+
+    stream_format = _stream_format(records)
+    if stream_format == STREAM_FORMAT:
+        return validate_stream_records(records)
+
+    from .ranked_stream import (  # imported lazily to avoid a module cycle
+        RANKED_STREAM_FORMAT,
+        convert_ranked_records,
+    )
+
+    if stream_format == RANKED_STREAM_FORMAT:
+        return convert_ranked_records(
+            records,
+            action_shift=ranked_action_shift,
+        )
+    raise ContractError(f"unsupported stream format: {stream_format!r}")
 
 
 def summarize_episode(episode: Mapping[str, Any]) -> dict[str, Any]:
@@ -134,12 +173,21 @@ def summarize_episode(episode: Mapping[str, Any]) -> dict[str, Any]:
         "steps": len(steps),
         "duration_ms": int(terminal.get("duration_ms", 0)),
         "damage_dealt": sum(
-            float(step["rewards"].get("damage_dealt", 0)) for step in steps
+            float(step["rewards"].get("damage_dealt", 0))
+            for step in steps
         ),
         "damage_received": sum(
-            float(step["rewards"].get("damage_received", 0)) for step in steps
+            float(step["rewards"].get("damage_received", 0))
+            for step in steps
         ),
-        "requests": sum(step.get("action_request") is not None for step in steps),
-        "confirmations": sum(len(step.get("confirmations", [])) for step in steps),
+        "requests": sum(
+            step.get("action_request") is not None
+            or step.get("action_label") is not None
+            for step in steps
+        ),
+        "confirmations": sum(
+            len(step.get("confirmations", []))
+            for step in steps
+        ),
         "reason": terminal.get("reason"),
     }
