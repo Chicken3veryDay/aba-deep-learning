@@ -1,0 +1,39 @@
+{
+  "canonical_clean_episode": "aba_deep_learning/ranked_watch_v2/ranked-watch-v2-1784755145671.clean.jsonl",
+  "canonical_episode": "ranked-watch-v2-1784755145671",
+  "closure_id": "ranked-capture-v2-closure",
+  "controller_enabled": false,
+  "dataset": {
+    "feature_width": 72,
+    "parse_errors": 0,
+    "quality_score": 0.90973449750535,
+    "schema_partition": "ranked_feature_vector_v3_explicit",
+    "steps": 2806,
+    "verdict": "ADMITTED_CLEAN_RANKED_HUMAN_EPISODE"
+  },
+  "duplicate_episode": "ranked-watch-v2-1784755145669",
+  "duplicate_status": "quarantined",
+  "github_sync": "completed_schema_metadata_only",
+  "model": {
+    "executor_integration_allowed": false,
+    "id": "ranked-temporal-mlp-v0",
+    "release_eligible": false,
+    "status": "rejected_distribution_shift"
+  },
+  "release": {
+    "eligible": false,
+    "executor_integration_allowed": false,
+    "gate": "human-policy-release-v2"
+  },
+  "schema_version": "1.0.0",
+  "watcher": {
+    "compiles": true,
+    "hud_filter_test_passed": true,
+    "idle_instance_destroyed": true,
+    "match_result_detection": true,
+    "opponent_absent_timeout_ms": 8000,
+    "sha256": "c695c08783c53b8cf7c7a9741ed6dd433a3ffb75d9f22af0b109f380e19dbebd",
+    "singleton_test_passed": true,
+    "version": "0.2.2-ranked-full-passive"
+  }
+}
