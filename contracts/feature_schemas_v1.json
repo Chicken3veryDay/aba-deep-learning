@@ -36,7 +36,7 @@
         "feature_vector_v3_explicit"
       ],
       "compatibility_group": "ranked_explicit_v3_72",
-      "reference_producer_sha256": "c695c08783c53b8cf7c7a9741ed6dd433a3ffb75d9f22af0b109f380e19dbebd",
+      "reference_producer_sha256": "d52b1795114dc287f1f91f33c487c96ad5f44f4694694b9202b0e8b75feff63f",
       "schema_id": "ranked_explicit_v3_72",
       "version": "3.0.0",
       "width": 72

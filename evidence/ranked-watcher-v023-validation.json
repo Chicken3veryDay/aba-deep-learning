@@ -1,0 +1,26 @@
+{
+  "artifact": "runtime_luau/RankedPassiveWatcherV2.runtime.luau",
+  "bytes": 39176,
+  "executor_integration_allowed": false,
+  "feature_schema_id": "ranked_explicit_v3_72",
+  "observed_at": "2026-07-22T23:02:00Z",
+  "roblox_validation": {
+    "compile_error": null,
+    "compile_ok": true,
+    "controller_enabled_after_test": false,
+    "forbidden_tokens_found": [],
+    "github_fetch_bytes": 39176,
+    "github_fetch_sha256": "d52b1795114dc287f1f91f33c487c96ad5f44f4694694b9202b0e8b75feff63f",
+    "passive": true,
+    "singleton_same_object": true,
+    "waiting_state": true
+  },
+  "runtime_episode_validation": {
+    "completed": false,
+    "reason": "test server had one living player after legacy watcher cleanup; source remained stopped",
+    "required_before_ranked_release": true
+  },
+  "sha256": "d52b1795114dc287f1f91f33c487c96ad5f44f4694694b9202b0e8b75feff63f",
+  "status": "compile_and_passive_invariants_verified",
+  "version": "0.2.3-ranked-full-passive"
+}

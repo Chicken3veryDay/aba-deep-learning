@@ -41,8 +41,8 @@ class FeatureSchemaRegistryParityTests(unittest.TestCase):
         )
         self.assertEqual(
             ranked.reference_producer_sha256,
-            "c695c08783c53b8cf7c7a9741ed6dd433a3ffb75d9f22af0"
-            "b109f380e19dbebd",
+            "d52b1795114dc287f1f91f33c487c96ad5f44f4694694b9202"
+            "b0e8b75feff63f",
         )
 
 
