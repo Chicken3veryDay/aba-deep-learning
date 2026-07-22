@@ -1,0 +1,31 @@
+{
+  "admission_report": "aba_deep_learning/ranked_watch_v2/ranked-watch-v2-1784755145671.admission.json",
+  "allowed_uses": [
+    "observation_pretraining",
+    "behavior_cloning",
+    "action_event_heads",
+    "damage_outcome_heads",
+    "held_out_policy_evaluation"
+  ],
+  "canonical_clean_path": "aba_deep_learning/ranked_watch_v2/ranked-watch-v2-1784755145671.clean.jsonl",
+  "canonical_clean_sha256": "e0117462db8b9075033e2413984ea3552737e2c83f3a227df7608be35b0ab03c",
+  "created_at_ms": 1784756158075,
+  "duration_ms": 187501,
+  "feature_schema": "ranked_feature_vector_v3_explicit",
+  "feature_width": 72,
+  "forbidden_uses": [
+    "duplicate ingestion",
+    "win_loss labels",
+    "autonomous release approval"
+  ],
+  "package_id": "ranked-match-1784755145671",
+  "quarantine_manifest": "aba_deep_learning/ranked_watch_v2/ranked-watch-v2-1784755145669.quarantine.json",
+  "raw_source_path": "aba_deep_learning/ranked_watch_v2/ranked-watch-v2-1784755145671.jsonl",
+  "raw_source_sha256": "69ca9a740ac265aaa490b6ef7d4ff103ff9965e67b7c694a8594dc5b1eecc9c9",
+  "release_eligible": false,
+  "schema_version": "1.0.0",
+  "source_type": "human_ranked_passive_observation",
+  "split_policy": "episode_level_only",
+  "steps": 2806,
+  "training_eligible": true
+}
