@@ -1,0 +1,19 @@
+{
+  "evidence": {
+    "test_block_f1": 0.018927444794953,
+    "test_m1_precision": 0.015748031496063,
+    "test_movement_exact": 0.10353535353535,
+    "test_sprint_positive_rate": 0.14141414141414,
+    "validation_sprint_positive_rate": 1.0
+  },
+  "model_id": "ranked-temporal-mlp-v0",
+  "prohibited": {
+    "executor_integration": true,
+    "production_runtime": true,
+    "release_selection": true
+  },
+  "reason": "single ranked match has strongly nonstationary temporal phases; blocked validation thresholds do not generalize to the untouched late-match test block",
+  "required_next_step": "collect at least two more independent explicit-v3 matches and use episode-level train/validation/test splits",
+  "schema_version": "1.0.0",
+  "status": "REJECTED_DISTRIBUTION_SHIFT"
+}
