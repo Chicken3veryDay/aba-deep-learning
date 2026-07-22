@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "aba-deep-learning"
-version = "0.3.0"
-description = "Contracts, authoritative collection, and deterministic dataset preparation for a hybrid learned ABA agent"
+version = "0.4.0"
+description = "Schema-safe contracts, collection, and dataset preparation for a hybrid learned ABA agent"
 requires-python = ">=3.11"
 dependencies = []
 
