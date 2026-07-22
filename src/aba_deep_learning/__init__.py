@@ -23,6 +23,14 @@ from .dataset import (
     write_dataset,
     write_partitioned_datasets,
 )
+from .episode_splits import (
+    SPLIT_NAMES,
+    SPLIT_PLAN_VERSION,
+    EpisodeSplitConfig,
+    EpisodeSplitError,
+    plan_episode_splits,
+    validate_episode_split_plan,
+)
 from .feature_schemas import (
     FEATURE_SCHEMAS,
     HUMAN_CAMERA_SCHEMA_ID,
@@ -64,6 +72,8 @@ __all__ = [
     "ContractError",
     "DATASET_VERSION",
     "DatasetConfig",
+    "EpisodeSplitConfig",
+    "EpisodeSplitError",
     "FEATURE_SCHEMAS",
     "FEATURE_VECTOR_LENGTH",
     "FeatureSchema",
@@ -76,6 +86,8 @@ __all__ = [
     "RANKED_STREAM_FORMAT",
     "RankedStreamError",
     "SCHEMA_VERSION",
+    "SPLIT_NAMES",
+    "SPLIT_PLAN_VERSION",
     "STREAM_FORMAT",
     "UnknownFeatureSchemaError",
     "action_label_from_ranked_step",
@@ -90,6 +102,7 @@ __all__ = [
     "load_episodes",
     "parse_jsonl",
     "parse_ranked_jsonl",
+    "plan_episode_splits",
     "read_episode_stream",
     "read_ranked_stream",
     "require_compatible_schemas",
@@ -100,6 +113,7 @@ __all__ = [
     "summarize_episode",
     "validate_action_mask",
     "validate_action_request",
+    "validate_episode_split_plan",
     "validate_observation",
     "validate_ranked_records",
     "validate_step",
