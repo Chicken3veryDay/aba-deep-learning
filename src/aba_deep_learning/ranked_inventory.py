@@ -27,8 +27,12 @@ def _observation(step: Mapping[str, Any]) -> Mapping[str, Any]:
 def _passive_failure(step: Mapping[str, Any], observation: Mapping[str, Any]) -> str | None:
     invariants = step.get("passive_invariants", observation.get("passive_invariants"))
     if isinstance(invariants, Mapping):
-        for key, value in invariants.items():
-            if (str(key).startswith("no_") or key == "controller_guard") and value is not True:
+        forbidden = (
+            "no_active_controller", "no_input_simulation", "no_remote_calls",
+            "no_executor_gameplay_actions", "no_model_decisions", "controller_guard",
+        )
+        for key in forbidden:
+            if key in invariants and invariants[key] is not True:
                 return f"passive_invariant_{key}"
     if step.get("controller_active") is True or step.get("contaminated") is True:
         return "controller_or_contaminated_flag"

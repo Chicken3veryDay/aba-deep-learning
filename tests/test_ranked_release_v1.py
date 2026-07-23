@@ -29,7 +29,7 @@ def step(index: int, *, keyed: bool = False, contaminated: bool = False) -> dict
     return {"record_type": "step", "step": {
         "step_index": index, "timestamp_ms": 1000 + index * 67,
         "feature_vector": vector,
-        "passive_invariants": {"no_ui": not contaminated, "no_remote_calls": True, "no_input_simulation": True, "controller_guard": True},
+        "passive_invariants": {"status_gui_visible": True, "no_remote_calls": not contaminated, "no_input_simulation": True, "controller_guard": True},
         "held": {"W": index % 2 == 1, "MouseButton1": index == 2},
         "self_state": {"health": 100 - index}, "target_state": {"health": 100 - index * 2},
     }}
