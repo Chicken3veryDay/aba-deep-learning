@@ -42,10 +42,33 @@ def _passive_failure(step: Mapping[str, Any], observation: Mapping[str, Any]) ->
     return None
 
 
+def _relative_display_path(source: Path, relative_to: str | Path | None) -> str:
+    if relative_to is None:
+        return str(source)
+    base = Path(relative_to)
+    try:
+        return str(source.relative_to(base))
+    except ValueError as original_error:
+        parts = [source.name]
+        current = source.parent
+        while True:
+            try:
+                if current.samefile(base):
+                    return str(Path(*reversed(parts)))
+            except OSError:
+                pass
+            parent = current.parent
+            if parent == current:
+                break
+            parts.append(current.name)
+            current = parent
+        raise original_error
+
+
 def parse_recording(path: str | Path, *, relative_to: str | Path | None = None, max_gap_ms: int = 1000) -> ParsedRecording:
     source = Path(path)
     raw = source.read_bytes()
-    relative = str(source.relative_to(relative_to)) if relative_to else str(source)
+    relative = _relative_display_path(source, relative_to)
     inv = FileInventory(relative.replace("\\", "/"), len(raw), hashlib.sha256(raw).hexdigest())
     header: dict[str, Any] = {}
     terminal: dict[str, Any] | None = None
