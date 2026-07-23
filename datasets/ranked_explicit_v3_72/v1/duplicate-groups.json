@@ -1,0 +1,14 @@
+[
+  {
+    "chosen": "aba_deep_learning/ranked_watch_v2/ranked-watch-v2-1784755145671.clean.jsonl",
+    "files": [
+      "aba_deep_learning/ranked_watch_v2/ranked-watch-v2-1784755145669.jsonl",
+      "aba_deep_learning/ranked_watch_v2/ranked-watch-v2-1784755145671.clean.jsonl",
+      "aba_deep_learning/ranked_watch_v2/ranked-watch-v2-1784755145671.jsonl"
+    ],
+    "group_id": "job:3c0e3c0b-5557-46a9-8da8-1ec5240815b4",
+    "information_lost": false,
+    "job_id": "3c0e3c0b-5557-46a9-8da8-1ec5240815b4",
+    "reason": "same Roblox job; clean and raw 1784755145671 have identical ordered-step hashes; clean derivative is canonical"
+  }
+]
