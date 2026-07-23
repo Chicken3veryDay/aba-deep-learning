@@ -1,0 +1,136 @@
+name: Patch Windows Relative Path
+
+on:
+  push:
+    branches: [feature/ranked-dataset-closure-gru-v1]
+    paths:
+      - .github/workflows/patch-windows-relative-path.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/ranked-dataset-closure-gru-v1
+          fetch-depth: 0
+      - name: Apply file-identity relative path fallback
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path("src/aba_deep_learning/ranked_inventory.py")
+          text = path.read_text(encoding="utf-8")
+          anchor = '''def parse_recording(path: str | Path, *, relative_to: str | Path | None = None, max_gap_ms: int = 1000) -> ParsedRecording:
+          '''
+          helper = '''def _relative_display_path(source: Path, relative_to: str | Path | None) -> str:
+              if relative_to is None:
+                  return str(source)
+              base = Path(relative_to)
+              try:
+                  return str(source.relative_to(base))
+              except ValueError as original_error:
+                  parts = [source.name]
+                  current = source.parent
+                  while True:
+                      try:
+                          if current.samefile(base):
+                              return str(Path(*reversed(parts)))
+                      except OSError:
+                          pass
+                      parent = current.parent
+                      if parent == current:
+                          break
+                      parts.append(current.name)
+                      current = parent
+                  raise original_error
+
+
+          def parse_recording(path: str | Path, *, relative_to: str | Path | None = None, max_gap_ms: int = 1000) -> ParsedRecording:
+          '''
+          if anchor not in text:
+              raise SystemExit("parse_recording anchor not found")
+          text = text.replace(anchor, helper, 1)
+          old = '    relative = str(source.relative_to(relative_to)) if relative_to else str(source)\n'
+          new = '    relative = _relative_display_path(source, relative_to)\n'
+          if old not in text:
+              raise SystemExit("relative path line not found")
+          path.write_text(text.replace(old, new, 1), encoding="utf-8")
+          PY
+      - name: Restore normal CI workflows
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          Path(".github/workflows/ci.yml").write_text('''name: CI
+
+          on:
+            push:
+              branches: [main]
+            pull_request:
+
+          permissions:
+            contents: read
+
+          jobs:
+            test:
+              strategy:
+                fail-fast: false
+                matrix:
+                  os: [ubuntu-latest, windows-latest]
+                  python-version: ["3.11"]
+              runs-on: ${{ matrix.os }}
+              steps:
+                - uses: actions/checkout@v4
+                - uses: actions/setup-python@v5
+                  with:
+                    python-version: ${{ matrix.python-version }}
+                - name: Install package with ML extras
+                  run: python -m pip install -e ".[ml]"
+                - name: Run tests
+                  run: python -m unittest discover -s tests -v
+                - name: Validate committed evidence
+                  run: python scripts/validate_evidence.py
+                - name: Validate ranked dataset v1
+                  run: python scripts/validate_ranked_release.py datasets/ranked_explicit_v3_72/v1
+          '''.replace("          ", ""), encoding="utf-8")
+
+          Path(".github/workflows/validate.yml").write_text('''name: Validate collector contracts
+
+          on:
+            push:
+              branches: [main]
+            pull_request:
+
+          permissions:
+            contents: read
+
+          jobs:
+            test:
+              strategy:
+                fail-fast: false
+                matrix:
+                  os: [ubuntu-latest, windows-latest]
+                  python-version: ["3.11", "3.13"]
+              runs-on: ${{ matrix.os }}
+              timeout-minutes: 15
+              steps:
+                - uses: actions/checkout@v4
+                - uses: actions/setup-python@v5
+                  with:
+                    python-version: ${{ matrix.python-version }}
+                - run: python -m pip install -e ".[ml]"
+                - run: python -m unittest discover -s tests -v
+          '''.replace("          ", ""), encoding="utf-8")
+          PY
+      - name: Commit patch and remove one-off workflow
+        run: |
+          git rm .github/workflows/patch-windows-relative-path.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add src/aba_deep_learning/ranked_inventory.py .github/workflows/ci.yml .github/workflows/validate.yml
+          git commit -m "Handle Windows path aliases in ranked inventory"
+          git push origin HEAD:feature/ranked-dataset-closure-gru-v1
