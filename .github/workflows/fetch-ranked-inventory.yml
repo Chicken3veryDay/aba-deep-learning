@@ -1,0 +1,28 @@
+name: Fetch Ranked Inventory Snapshot
+
+on:
+  push:
+    branches: [feature/ranked-dataset-closure-gru-v1]
+    paths:
+      - .github/workflows/fetch-ranked-inventory.yml
+
+permissions:
+  contents: read
+
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Download and verify inventory snapshot
+        run: |
+          curl --fail --location --retry 3 https://tempfile.org/3eam9QW5Z7E/download --output admission-report.json
+          echo "95ccd24e86587064d8255fb73fa751db18f8e3b4aa9218451bfc4b61af12875e  admission-report.json" | sha256sum --check --strict
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ranked-inventory-snapshot-v1
+          path: admission-report.json
+          retention-days: 1
+      - name: Delete temporary snapshot relay
+        if: always()
+        run: curl --request DELETE --fail --silent --show-error https://tempfile.org/api/file/3eam9QW5Z7E || true
