@@ -1,0 +1,7 @@
+{
+  "alias_verdict": "equivalent only when feature_names exactly match schema.json in order",
+  "canonical_schema": "ranked_explicit_v3_72",
+  "observed_object_serialization_migration": "deterministic 1..72 key ordering; source files unchanged",
+  "original_declared_schema_preserved": true,
+  "producer_reference_sha256": "d52b1795114dc287f1f91f33c487c96ad5f44f4694694b9202b0e8b75feff63f"
+}
